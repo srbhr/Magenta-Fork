@@ -15,5 +15,7 @@ from swirl.processors.write_to_filesystem import *
 from swirl.processors.temporal_relevancy import *
 from swirl.processors.date_finder import *
 from swirl.processors.entity_matcher import * 
+from swirl.processors.entity_extractor import *
+from swirl.processors.sentiment_analyzer import *
 
 # Add new processors here!
