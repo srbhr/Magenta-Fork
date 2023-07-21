@@ -1,5 +1,6 @@
 name: Ingegration UI Tests
-
+## Do we need to set this to something? SWIRL_TEST_HOST
+## or this? ALLOWED_HOSTS=localhost,host.docker.internal
 on:
   push:
     # only trigger on branches, not on tags
@@ -36,12 +37,12 @@ jobs:
     # Pull selenium image
     ##########################################
     - name: Pull selenium image
-      run: docker pull seleniarm/standalone-chromium:latest
+      run: docker pull selenium/standalone-chrome
     ##########################################	    
     # Run selenium image
     ##########################################
     - name: Run selenium image
-      run: docker run --rm -it -p 4444:4444 -p 5900:5900 -p 7900:7900 --shm-size 2g seleniarm/standalone-chromium:latest
+      run: docker run -d -p 4444:4444 -p 7900:7900 --shm-size="2g" selenium/standalone-chrome:latest
     ##########################################	    
     # Start Swirl
     ##########################################
