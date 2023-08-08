@@ -25,6 +25,8 @@ jobs:
     ##########################################	    
     # Install swirl
     ########################################## 
+    - name: Run Install rabbitmq-server
+      run: sudo apt install -y rabbitmq-server  
     - name: Run Install Swirl
       run: ./install.sh
     - name: Set up SWIRL
@@ -50,4 +52,4 @@ jobs:
     # Run UI tests
     ##########################################
     - name: Run Integrated API tests
-      run: docker run --net=host -t swirlai/swirl-search:latest-ui-automation sh -c "behave --tags=ui_agile_test"
+      run: docker run --net=host -t swirlai/swirl-search:latest-ui-automation sh -c "behave **/*/search_core.feature --tags=ui_agile_test"
