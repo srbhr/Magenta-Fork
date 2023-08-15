@@ -37,7 +37,7 @@ jobs:
     # Pull selenium image
     ##########################################
     - name: Pull selenium image
-      run: docker pull seleniarm/standalone-chromium
+      run: docker pull seleniarm/standalone-chromium:latest
     ##########################################	    
     # Run selenium image
     ##########################################
