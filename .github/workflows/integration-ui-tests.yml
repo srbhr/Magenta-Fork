@@ -42,7 +42,7 @@ jobs:
     # Run selenium image
     ##########################################
     - name: Run selenium image
-      run: docker run -p 4444:4444 --shm-size 2g seleniarm/standalone-chromium:latest
+      run: docker run -d -p 4444:4444 --shm-size 2g seleniarm/standalone-chromium:latest
     ##########################################	    
     # Start Swirl
     ##########################################
