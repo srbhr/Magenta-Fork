@@ -11,24 +11,18 @@ class TokenMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        print(request.path)
-        if (request.path == '/swirl/login/' or '/sapi/' not in request.path) and request.path != '/swirl/logout/':
-            print('return')
+        if (request.path == '/swirl/login/' or request.path == '/swirl/oidc_authenticate/' or '/sapi/' not in request.path) and request.path != '/swirl/logout/':
             return self.get_response(request)
         if 'Authorization' not in request.headers:
-            print('Authorization not in request.headers')
             return HttpResponseForbidden()
 
         auth_header = request.headers['Authorization']
         token = auth_header.split(' ')[1]
         try:
             token_obj = Token.objects.get(key=token)
-            print(request.user)
             request.user = token_obj.user
         except Token.DoesNotExist:
-            print('Token.DoesNotExist')
             return HttpResponseForbidden()
-        print('return response')
         return self.get_response(request)
 
 class SpyglassAuthenticatorsMiddleware:

@@ -38,6 +38,8 @@ from swirl.connectors.utils import bind_query_mappings
 
 from swirl.connectors.connector import Connector
 
+import xmltodict
+
 ########################################
 ########################################
 
@@ -69,7 +71,7 @@ class Requests(Connector):
         the query to provider.
         """
 
-        logger.info(f"{self}: construct_query()")
+        logger.debug(f"{self}: construct_query()")
 
         # to do: migrate this to Connector base class?
         query_to_provider = ""
@@ -83,12 +85,16 @@ class Requests(Connector):
 
         if self.search.sort.lower() == 'date':
             # insert before the last parameter, which is expected to be the user query
-            sort_query = query_to_provider[:query_to_provider.rfind('&')]
-            if 'DATE_SORT' in self.query_mappings:
-                sort_query = sort_query + '&' + self.query_mappings['DATE_SORT'] + query_to_provider[query_to_provider.rfind('&'):]
-                query_to_provider = sort_query
+            amp_index = query_to_provider.rfind('&')
+            if amp_index >= 0:
+                sort_query = query_to_provider[:amp_index]
+                if 'DATE_SORT' in self.query_mappings:
+                    sort_query = sort_query + '&' + self.query_mappings['DATE_SORT'] + query_to_provider[query_to_provider.rfind('&'):]
+                    query_to_provider = sort_query
+                else:
+                    self.warning(f'DATE_SORT missing from self.query_mappings: {self.query_mappings}')
             else:
-                self.warning(f'DATE_SORT missing from self.query_mappings: {self.query_mappings}')
+                    logger.debug(f'request sort processing URL does not contain & character : {self.query_to_provider}')
         else:
             sort_query = query_to_provider[:query_to_provider.rfind('&')]
             if 'RELEVANCY_SORT' in self.query_mappings:
@@ -103,7 +109,7 @@ class Requests(Connector):
 
     def validate_query(self, session=None):
 
-        logger.info(f"{self}: validate_query()")
+        logger.debug(f"{self}: validate_query()")
 
         query_to_provider = self.query_to_provider
         if '{' in query_to_provider or '}' in query_to_provider:
@@ -125,7 +131,7 @@ class Requests(Connector):
 
     def execute_search(self, session=None):
 
-        logger.info(f"{self}: execute_search()")
+        logger.debug(f"{self}: execute_search()")
 
         # determine if paging is required
         pages = 1
@@ -192,7 +198,7 @@ class Requests(Connector):
                             headers = {
                                 "X-Api-Key": f"{self.provider.credentials.split('X-Api-Key=')[1]}"
                             }
-                            logger.info(f"{self}: sending request with auth header X-Api-Key")
+                            logger.debug(f"{self}: sending request with auth header X-Api-Key")
                             response = self.send_request(page_query, headers=self._put_configured_headers(headers), query=self.query_string_to_provider)
                             # all others
                         else:
@@ -217,8 +223,16 @@ class Requests(Connector):
             # end if
 
             # normalize the response
+            content_type = response.headers['Content-Type']
+            json_data = None
+            if 'text/xml' in content_type or 'application/xml' in content_type or 'application/atom+xml' in content_type:
+                json_data = xmltodict.parse(response.text)
+            else:
+                json_data = response.json()
+                if not 'application/json' in content_type:
+                    logger.debug(f"content header not xml or explitily json, assuming json")
+
             mapped_response = {}
-            json_data = response.json()
             if not json_data:
                 self.message(f"Retrieved 0 of 0 results from: {self.provider.name}")
                 self.retrieved = 0
@@ -235,7 +249,7 @@ class Requests(Connector):
                     try:
                         jxp = parse(jxp_key)
                         matches = [match.value for match in jxp.find(json_data)]
-                    except JsonPathParserError:
+                    except JsonPathParserError as err:
                         self.error(f'JsonPathParser: {err} in provider.self.response_mappings: {self.provider.response_mappings}')
                         return
                     except (NameError, TypeError, ValueError) as err:

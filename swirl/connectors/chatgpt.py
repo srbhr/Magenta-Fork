@@ -26,20 +26,28 @@ from datetime import datetime
 
 import openai
 
+MODEL_3 = "gpt-3.5-turbo"
+MODEL_4 = "gpt-4"
+
+MODEL = MODEL_3
+
 ########################################
 ########################################
+
+MODEL_DEFAULT_SYSTEM_GUIDE = "You are a helpful assistant, keeping your response brief and to the point."
 
 class ChatGPT(Connector):
 
     type = "ChatGPT"
 
     def __init__(self, provider_id, search_id, update, request_id=''):
+        self.system_guide = MODEL_DEFAULT_SYSTEM_GUIDE
         super().__init__(provider_id, search_id, update, request_id)
 
 
     def execute_search(self, session=None):
 
-        logger.info(f"{self}: execute_search()")
+        logger.debug(f"{self}: execute_search()")
 
         if self.provider.credentials:
             openai.api_key = self.provider.credentials
@@ -60,25 +68,26 @@ class ChatGPT(Connector):
                 prompted_query = self.query_to_provider
                 self.warning(f'PROMPT not found in query_mappings!')
 
+        if 'CHAT_QUERY_REWRITE_GUIDE' in self.query_mappings:
+            self.system_guide = self.query_mappings['CHAT_QUERY_REWRITE_GUIDE'].format(query_to_provider=self.query_to_provider)
+
         if not prompted_query:
             self.found = 0
             self.retrieved = 0
             self.response = []
             self.status = "ERR_PROMPT_FAILED"
             return
-
+        logger.info(f'CGPT completion system guide:{self.system_guide} query to provider : {self.query_to_provider}')
         self.query_to_provider = prompted_query
-
-        completions = openai.Completion.create(
-            engine="text-davinci-002",
-            prompt=self.query_to_provider,
-            max_tokens=1024,
-            n=1,
-            stop=None,
-            temperature=0.5,
+        completions = openai.ChatCompletion.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": self.system_guide},
+                {"role": "user", "content": self.query_to_provider},
+            ],
+            temperature=0,
         )
-
-        message = completions.choices[0].text
+        message = completions['choices'][0]['message']['content'] # FROM API Doc
 
         self.found = 1
         self.retrieved = 1
@@ -90,7 +99,7 @@ class ChatGPT(Connector):
 
     def normalize_response(self):
 
-        logger.info(f"{self}: normalize_response()")
+        logger.debug(f"{self}: normalize_response()")
 
         self.results = [
                 {

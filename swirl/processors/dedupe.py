@@ -63,9 +63,13 @@ class DedupeByFieldResultProcessor(ResultProcessor):
         deduped_item_list = []
         dupes = 0
         dupes = dupes + _dedup_results(results, dedupe_key_dict, deduped_item_list, self.provider.result_grouping_field)
-        logger.info(f'removed {dupes} using field {provider.result_grouping_field} from result with length : {len(results)}')
+        logger.debug(f'removed {dupes} using field {provider.result_grouping_field} from result with length : {len(results)}')
         self.processed_results = deduped_item_list
-        return dupes > 0
+
+        if dupes > 0:
+            return -1 * dupes
+        
+        return 0
 
 class DedupeByFieldPostResultProcessor(PostResultProcessor):
 
@@ -82,7 +86,11 @@ class DedupeByFieldPostResultProcessor(PostResultProcessor):
             result.save()
         # end for
 
-        self.results_updated = dupes
+        if dupes > 0:
+            self.results_updated = -1 * dupes
+        else:
+            self.results_updated = 0
+
         return self.results_updated
 
 #############################################
@@ -127,9 +135,13 @@ class DedupeBySimilarityPostResultProcessor(PostResultProcessor):
                 # end if
             # end for
             result.json_results = deduped_item_list
-            logger.info(f"{self}: result.save()")
+            logger.debug(f"{self}: result.save()")
             result.save()
         # end for
 
-        self.results_updated = dupes
+        if dupes > 0:
+            self.results_updated = -1 * dupes
+        else:
+            self.results_updated = 0
+            
         return self.results_updated

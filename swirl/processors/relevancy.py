@@ -64,7 +64,9 @@ class CosineRelevancyResultProcessor(ResultProcessor):
 
         list_query_lens.append(len(parsed_query.query_list))
         for item in self.results:
+            dict_score = {}
             if 'explain' in item:
+                logger.debug("Copying explain!!!!")
                 dict_score = item['explain']
                 item['dict_score'] = dict_score
                 dict_len = {}
@@ -101,12 +103,20 @@ class CosineRelevancyResultProcessor(ResultProcessor):
                 # end for
                 item['dict_len'] = dict_len
                 continue
-            if not 'hits' in item:
-                item['hits'] = {}
 
             ############################################
             # result item
-            dict_score = {}
+
+            if not 'hits' in item:
+                item['hits'] = {}
+
+            if 'explain' in item:
+                logger.debug("Skipping item with explain already")
+                continue
+
+            if 'title' in dict_score:
+                logger.debug("Found title in dict_score!")
+
             dict_score['stems'] = ' '.join(parsed_query.query_stemmed_list)
             dict_len = {}
             notted = ""
@@ -248,7 +258,6 @@ class CosineRelevancyResultProcessor(ResultProcessor):
                                 if dict_score[field][key] == 0.0:
                                     qw_nlp_sim = qw_nlp.similarity(rw_nlp)
                                     if qw_nlp_sim:
-                                        # self.warning(f"compare: {qw_nlp} sim? {rw_nlp} = {qw_nlp_sim}")
                                         if qw_nlp_sim >= float(SWIRL_MIN_SIMILARITY):
                                             dict_score[field][key] = qw_nlp_sim
                                         else:
@@ -278,12 +287,25 @@ class CosineRelevancyResultProcessor(ResultProcessor):
                     item[field] = highlight_list(remove_tags(item[field]), extracted_highlights)
                 # end if
             # end for field in RELEVANCY_CONFIG:
+
+            if not dict_score:
+                logger.debug("No dict_score!")
+
             if notted:
                 item['NOT'] = notted
             else:
-                item['dict_score'] = dict_score
-                item['dict_len'] = dict_len
+                if not 'dict_score' in item:
+                    item['dict_score'] = dict_score
+                    item['dict_len'] = dict_len
+                else:
+                    logger.debug("No dict_score in item!!!")
+                if not 'dict_len' in item:
+                    logger.debug("Missing dict_len!!")
+
         # end for result in results.json_results:
+
+        # Note the length here beforewe had the feedback below
+        self.modified = len(self.results)
 
         # Add list_query_lens to result processor feedback
         rpf_rec = result_processor_feedback_empty_record()
@@ -291,7 +313,6 @@ class CosineRelevancyResultProcessor(ResultProcessor):
         rpf_rec["result_processor_feedback"]["query"]["list_query_lens"] = list_query_lens
         self.results.append(rpf_rec)
         self.processed_results = self.results
-        self.modified = len(self.results)
         swrel_logger.complete_pass_1()
         return self.modified
 
@@ -347,6 +368,8 @@ class CosineRelevancyPostResultProcessor(PostResultProcessor):
             if not results.json_results:
                 continue
             for item in results.json_results:
+                if 'swirl_score' in item:
+                    logger.debug(f"already scored - {item['url']}")
                 item['swirl_score'] = 0.0
                 # check for not
                 if 'NOT' in item:
@@ -355,16 +378,28 @@ class CosineRelevancyPostResultProcessor(PostResultProcessor):
                     del item['NOT']
                     break
                 # retrieve the scores and lens from pass 1
+                dict_score = None
                 if 'dict_score' in item:
                     dict_score = item['dict_score']
                     del item['dict_score']
                 else:
-                    continue
+                    logger.debug("Missing dict_score!")
                 if 'dict_len' in item:
+                    logger.debug("Found dict_len")
                     dict_len = item['dict_len']
                     del item['dict_len']
                 else:
-                    continue
+                    logger.debug("Missing dict_len!")
+                if 'explain' in item:
+                    logger.debug("Found explain")
+                    dict_score = item['explain']
+                    del item['explain']
+
+                # Check if dict_score is still not defined
+                if dict_score is None:
+                    self.warning("dict_score is still missing after all attempts to define it!")
+                    continue  # Skip to the next iteration
+
                 relevancy_model = ""
                 # check for _relevancy_model
                 if '_relevancy_model' in item:
@@ -396,17 +431,20 @@ class CosineRelevancyPostResultProcessor(PostResultProcessor):
                     len_adjust = float(dict_len_median[f] / dict_len[f])
                     dict_len_adjust[f] = len_adjust
                     qlen_adjust = float(median(list_query_lens) / len(results.query_string_to_provider.strip().split()))
+                    logger.debug(f"score loop driver - {f} - {dict_score[f]} - {item['url']}")
                     for k in dict_score[f]:
-                        if k.startswith('_'):
+                        if k.startswith('_') or k in ('result_length_adjust', 'query_length_adjust'):
                             continue
                         if not dict_score[f][k]:
                             continue
                         if dict_score[f][k] >= float(SWIRL_MIN_SIMILARITY):
                             rank_adjust = 1.0 + (1.0 / sqrt(item['searchprovider_rank']))
+                            logger.debug(f"calc swirl_score BEFORE - {item['swirl_score']} - {item['url']}")
                             if k.endswith('_*') or k.endswith('_s*'):
                                 item['swirl_score'] = item['swirl_score'] + (weight * dict_score[f][k]) * (len(k) * len(k))
                             else:
                                 item['swirl_score'] = item['swirl_score'] + (weight * dict_score[f][k]) * (len(k) * len(k)) * len_adjust * qlen_adjust * rank_adjust
+                            logger.debug(f"calc swirl_score AFTER - {item['swirl_score']} - {item['url']}")
                         # end if
                     # end for
                 # end for
@@ -416,6 +454,7 @@ class CosineRelevancyPostResultProcessor(PostResultProcessor):
                         dict_score[f]['query_length_adjust'] = qlen_adjust
                 ####### explain
                 item['explain'] = dict_score
+                item['dict_len'] = dict_len
                 possible_hits = item.get('hits', None)
                 if possible_hits:
                     item['explain']['hits'] = item['hits']

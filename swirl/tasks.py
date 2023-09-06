@@ -9,6 +9,10 @@ from os import environ
 from celery.utils.log import get_task_logger
 from celery import shared_task
 from celery.schedules import crontab
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
+from swirl.models import OauthToken
+
 
 import django
 
@@ -27,49 +31,37 @@ from swirl.perfomance_logger import *
 ##################################################
 ##################################################
 
-@shared_task(name='federate', ignore_result=True)
+@shared_task(name='federate', ignore_result=False)
 def federate_task(search_id, provider_id, provider_connector, update, session, request_id):
-    logger.info(f"{module_name}: federate_task: {search_id}_{provider_id}_{provider_connector} update: {update} request_id {request_id}")
+    logger.debug(f"{module_name}: federate_task: {search_id}_{provider_id}_{provider_connector} update: {update} request_id {request_id}")
     try:
         with ProviderQueryRequestLogger(provider_connector+'_'+str(provider_id), request_id):
             connector = alloc_connector(connector=provider_connector)(provider_id, search_id, update, request_id=request_id)
-            connector.federate(session)
+            return connector.federate(session)
     except NameError as err:
         message = f'Error: NameError: {err}'
         logger.error(f'{module_name}: {message}')
     except TypeError as err:
         message = f'Error: TypeError: {err}'
         logger.error(f'{module_name}: {message}')
-    return
 
 ##################################################
 
 
-@shared_task(name='search', ignore_result=True)
+@shared_task(name='search', ignore_result=False)
 def search_task(search_id, session):
     from swirl.search import search
 
-    logger.info(f"{module_name}: search_task: {search_id}")
+    logger.debug(f"{module_name}: search_task: {search_id}")
     return search(search_id, session)
 
 ##################################################
-
-
-@shared_task(name='rescore', ignore_result=True)
-def rescore_task(search_id):
-    from swirl.search import rescore
-
-    logger.info(f"{module_name}: rescore_task: {search_id}")
-    return rescore(search_id)
-
-##################################################
-
 
 @shared_task(name='expirer')
 def expirer_task():
     from swirl.expirer import expirer
 
-    logger.info(f"{module_name}: expirer()")
+    logger.debug(f"{module_name}: expirer()")
     return expirer()
 
 ##################################################
@@ -79,5 +71,24 @@ def expirer_task():
 def subscriber_task():
     from swirl.subscriber import subscriber
 
-    logger.info(f"{module_name}: subscriber()")
     return subscriber()
+
+@shared_task(name='update_microsoft_token')
+def update_microsoft_token_task(headers):
+    if headers['Authorization']:
+        auth_header = headers['Authorization']
+        auth_token = auth_header.split(' ')[1]
+        token_obj = Token.objects.get(key=auth_token)
+        token = headers['Microsoft-Authorization']
+        if token:
+            try:
+                logger.debug(f"{module_name}: update_microsoft_token_task: User - {token_obj.user.username}")
+                microsoft_token_object, created = OauthToken.objects.get_or_create(owner=token_obj.user, defaults={'token': token})
+                if not created:
+                    microsoft_token_object.token = token
+                    microsoft_token_object.save()
+                return { 'user': token_obj.user.username, 'status': 'success' }
+            except User.DoesNotExist:
+                return {}
+        return {}
+    return {}
