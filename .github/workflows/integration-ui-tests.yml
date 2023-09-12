@@ -57,7 +57,7 @@ jobs:
     # Run UI tests
     ##########################################
     - name: Run Integrated API tests
-      run: docker run --net=host -t swirlai/swirl-testing:latest-smoke-test sh -c "behave **/*/search_core.feature --tags=ui_agile_test"
+      run: docker run --net=host -t swirlai/swirl-testing:latest-ui-automation sh -c "behave **/*/search_core.feature --tags=ui_agile_test"
     - name: Upload log files
       if: always()
       uses: actions/upload-artifact@v2
