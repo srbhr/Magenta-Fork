@@ -19,7 +19,15 @@ jobs:
     # Pull selenium image
     ##########################################
     - name: Pull selenium image
-      run: docker pull selenium/standalone-firefox:latest    
+      run: docker pull selenium/standalone-firefox:latest
+    ##########################################	    
+    # Add Host Address 
+    ##########################################
+    - name: Modify Hosts File
+      run: echo "127.0.0.1 swirltest" > $GITHUB_WORKSPACE/modified_hosts
+    - name: Use Modified Hosts File
+      run: |
+        sudo cp $GITHUB_WORKSPACE/modified_hosts /etc/hosts
     ##########################################	    
     # Install swirl
     ##########################################
@@ -52,7 +60,7 @@ jobs:
     # Start Swirl
     ##########################################
     - name: Add Allowed Host
-      run: awk -v new_hosts="ALLOWED_HOSTS=host.docker.internal,localhost" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
+      run: awk -v new_hosts="ALLOWED_HOSTS=swirltest,localhost" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
     - name: Check ENV
       run: cat .env
     - name: Start up SWIRL
