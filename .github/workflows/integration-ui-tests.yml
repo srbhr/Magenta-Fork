@@ -32,9 +32,11 @@ jobs:
     - name: Use Modified Hosts File
       run: |
         sudo cp $GITHUB_WORKSPACE/modified_hosts /etc/hosts
+    - name: Get Host Gateway IP
+      id: gateway_ip
+      run: echo "::set-output name=ip::$(ip route | awk '/default/ { print $3 }')"
     - name: Modify Hosts File
-      run: |
-        echo "$(ip route | awk '/default/ { print $3 }') host.docker.internal" >
+      run: echo "${{ steps.gateway_ip.outputs.ip }} host.docker.internal" > $GITHUB_WORKSPACE/modified_hosts    
     - name: Check Hosts
       run: cat /etc/hosts
     ##########################################	    
