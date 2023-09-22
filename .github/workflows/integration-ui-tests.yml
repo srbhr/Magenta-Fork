@@ -26,7 +26,7 @@ jobs:
     - name: Run Install Swirl
       run: ./install.sh
     - name: Add Allowed Host
-      run: awk -v new_hosts="ALLOWED_HOSTS=localhost,hosts.docker.internal" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
+      run: awk -v new_hosts="ALLOWED_HOSTS=localhost,host.docker.internal" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
     - name: Update apt
       run: sudo apt -o Acquire::Retries=3 update
     - name: upgrade Ubuntu to latest patches
