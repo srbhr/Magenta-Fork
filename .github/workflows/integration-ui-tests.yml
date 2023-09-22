@@ -53,6 +53,8 @@ jobs:
     ##########################################
     - name: Add Allowed Host
       run: awk -v new_hosts="ALLOWED_HOSTS=localhost,host.docker.internal" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
+    - name: Check ENV
+      run: cat .env
     - name: Start up SWIRL
       run: python swirl.py start
     ##########################################	    
