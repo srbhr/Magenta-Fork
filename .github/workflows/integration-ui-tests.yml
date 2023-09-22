@@ -28,6 +28,8 @@ jobs:
     - name: Use Modified Hosts File
       run: |
         sudo cp $GITHUB_WORKSPACE/modified_hosts /etc/hosts
+    - name: Check Hosts
+      run: cat /etc/hosts
     ##########################################	    
     # Install swirl
     ##########################################
