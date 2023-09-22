@@ -32,6 +32,9 @@ jobs:
     - name: Use Modified Hosts File
       run: |
         sudo cp $GITHUB_WORKSPACE/modified_hosts /etc/hosts
+    - name: Modify Hosts File
+      run: |
+        echo "$(ip route | awk '/default/ { print $3 }') host.docker.internal" >
     - name: Check Hosts
       run: cat /etc/hosts
     ##########################################	    
@@ -66,7 +69,7 @@ jobs:
     # Start Swirl
     ##########################################
     - name: Add Allowed Host
-      run: awk -v new_hosts="ALLOWED_HOSTS=swirltest,localhost,127.0.0.1,0.0.0.0" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
+      run: awk -v new_hosts="ALLOWED_HOSTS=host.docker.internal,swirltest,localhost,127.0.0.1,0.0.0.0" '/^ALLOWED_HOSTS=/{print new_hosts; next} 1' .env > .env.tmp && mv .env.tmp .env
     - name: Check ENV
       run: cat .env
     - name: Check Hosts
