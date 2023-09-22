@@ -19,7 +19,7 @@ jobs:
     # Pull selenium image
     ##########################################
     - name: Pull selenium image
-      run: docker pull seleniarm/standalone-firefox:latest
+      run: docker pull seleniarm/standalone-chromium:latest
     ##########################################	    
     # Add Host Address 
     ##########################################
@@ -59,7 +59,7 @@ jobs:
     # Run selenium image
     ##########################################
     - name: Run selenium image
-      run: docker run --rm -p 4444:4444 -p 7900:7900 --shm-size 2g seleniarm/standalone-firefox:latest &
+      run: docker run --rm -p 4444:4444 -p 7900:7900 --shm-size 2g seleniarm/standalone-chromium:latest &
     ##########################################	    
     # Start Swirl
     ##########################################
