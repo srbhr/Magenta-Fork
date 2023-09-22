@@ -25,6 +25,8 @@ jobs:
     ##########################################
     - name: Run Install Swirl
       run: ./install.sh
+    - name: Add Allowed Host
+      run: export ALLOWED_HOSTS=host.docker.internal
     - name: Update apt
       run: sudo apt -o Acquire::Retries=3 update
     - name: upgrade Ubuntu to latest patches
@@ -57,7 +59,7 @@ jobs:
     # Run UI tests
     ##########################################
     - name: Run Integrated API tests
-      run: docker run --net=host -t swirlai/swirl-testing:latest-ui-automation sh -c "behave **/*/search_core.feature --tags=DS400"
+      run: docker run --net=host -t swirlai/swirl-testing:latest-ui-automation sh -c "behave **/*/search_core.feature --tags=ui_agile_test"
     - name: Upload log files
       if: always()
       uses: actions/upload-artifact@v2
