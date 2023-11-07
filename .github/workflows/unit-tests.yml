@@ -8,7 +8,7 @@ on:
     # Only trigger on branches, not on tags
     branches:
       - 'develop'
-      - 'DS-1169' # Add your new branch here
+      - 'DS-1160' # Add your new branch here
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
