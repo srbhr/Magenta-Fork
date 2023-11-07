@@ -510,7 +510,6 @@ def test_cgptqp_1():
             ],
             temperature=0)
 
-# @pytest.mark.skip(reason="tmp for cgpt")
 @pytest.mark.django_db
 def test_cgptqp_2():
     tc = 'gig economy'
@@ -543,7 +542,6 @@ def test_cgptqp_2():
             ],
             temperature=0)
 
-# @pytest.mark.skip(reason="tmp for cgpt")
 @pytest.mark.django_db
 def test_cgptqp_3():
     tc = 'gig economy'
@@ -576,7 +574,6 @@ def test_cgptqp_3():
             ],
             temperature=0)
 
-# @pytest.mark.skip(reason="tmp for cgpt")
 @pytest.mark.django_db
 def test_cgptqp_4():
     tc = 'gig economy'
@@ -611,7 +608,6 @@ def test_cgptqp_4():
             temperature=0)
 
 
-# @pytest.mark.skip(reason="tmp for cgpt")
 @pytest.mark.django_db
 def test_cgptqp_5():
     tc = 'gig economy'
@@ -648,7 +644,6 @@ def test_cgptqp_5():
             temperature=0)
 
 
-# @pytest.mark.skip(reason="tmp for cgpt")
 @pytest.mark.django_db
 def test_cgptqp_6():
     tc = 'gig economy'
@@ -685,7 +680,6 @@ def test_cgptqp_6():
             temperature=0)
 
 
-# @pytest.mark.skip(reason="tmp for cgpt")
 @pytest.mark.django_db
 def test_cgptqp_7():
     tc = 'gig economy'
