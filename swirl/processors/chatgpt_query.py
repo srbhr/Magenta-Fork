@@ -24,7 +24,7 @@ TAG_SYSTEM_GUIDE= "CHAT_QUERY_REWRITE_GUIDE"
 TAG_DO_FILTER= "CHAT_QUERY_DO_FILTER"
 MODEL_DEFAULT_SYSTEM_GUIDE = "You are helping a user formulate better queries"
 MODEL_DEFAULT_PROMPT = "Write a more precise query of similar length to this one {query_string}"
-MODEL_DEFAULT_DO_FILTER = True
+MODEL_DEFAULT_DO_FILTER = "true"
 
 #############################################
 #############################################
@@ -76,17 +76,18 @@ class ChatGPTQueryProcessor(QueryProcessor):
 
         if filter_tag_value == None or len(filter_tag_value) <= 0:
             self.do_filter = MODEL_DEFAULT_DO_FILTER
-        try:
-            if filter_tag_value.lower() == 'true':
-                self.do_filter = True
-            elif filter_tag_value.lower() == 'false':
-                self.do_filter = False
-            else:
-                logger.error(f"Error parsing filter tag {filter_tag_value} using default: {MODEL_DEFAULT_DO_FILTER}")
+        else:
+            try:
+                if filter_tag_value.lower() == 'true':
+                    self.do_filter = True
+                elif filter_tag_value.lower() == 'false':
+                    self.do_filter = False
+                else:
+                    logger.error(f"Error parsing filter tag {filter_tag_value} using default: {MODEL_DEFAULT_DO_FILTER}")
+                    self.do_filter = MODEL_DEFAULT_DO_FILTER
+            except Exception as x:
+                logger.error(f"Exception parsing filter tag {filter_tag_value} using default: {MODEL_DEFAULT_DO_FILTER}")
                 self.do_filter = MODEL_DEFAULT_DO_FILTER
-        except Exception as x:
-            logger.error(f"Exception parsing filter tag {filter_tag_value} using default: {MODEL_DEFAULT_DO_FILTER}")
-            self.do_filter = MODEL_DEFAULT_DO_FILTER
 
     def process(self):
         try:
